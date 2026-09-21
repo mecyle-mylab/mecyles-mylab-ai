@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mecyle's MYLAB AI V15.1</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--green:#00FF88;--bg:#080808;--card:#111}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Inter,sans-serif;background:var(--bg);color:white}
+h1{font-family:'Space Grotesk',sans-serif}
+.nav{display:flex;justify-content:space-between;padding:16px 5%;position:sticky;top:0;background:rgba(8,8,8,.9);backdrop-filter:blur(12px);border-bottom:1px solid #1a1a1a;z-index:99}
+.btn{padding:12px 22px;border-radius:100px;font-weight:800;border:none;cursor:pointer;font-size:13px;transition:.2s}
+.btn-g{background:var(--green);color:black}.btn-o{border:1px solid #222;color:white;background:transparent}
+.btn-sm{padding:6px 12px;font-size:11px}
+.hero{padding:40px 5% 20px;display:grid;grid-template-columns:1fr 1fr;gap:30px}
+.hero h1{font-size:46px;line-height:.9;letter-spacing:-2px}.hero h1 b{color:var(--green)}
+.generator{background:var(--card);border:1px solid #1e1e1e;border-radius:20px;padding:20px}
+.generator input,.generator select{width:100%;padding:12px 14px;border-radius:12px;background:#0a0a0a;border:1px solid #222;color:white;margin:8px 0 12px;outline:none}
+.generator input:focus{border-color:var(--green)}
+.preview-wrap{display:none;margin-top:16px}
+.preview{border-radius:16px;overflow:hidden;background:white;color:black;max-height:800px;overflow-y:auto;border:2px solid #222;position:relative}
+.action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.edit-price{border:1px dashed #FF3B30;background:#fff5f5;padding:2px 6px;border-radius:6px;font-weight:800;font-size:12px;min-width:70px;display:inline-block;text-align:center}
+.qty-btn{width:28px;height:28px;border-radius:100px;border:1px solid #ddd;background:white;font-weight:800;cursor:pointer}
+.cart-bar{position:sticky;bottom:0;background:#0f0f0f;color:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-top:2px solid var(--green)}
+.lang-bar{display:flex;gap:6px;padding:8px;background:#f5f5f5;border-bottom:1px solid #eee;align-items:center}
+.lang-btn{padding:4px 10px;border-radius:100px;border:1px solid #ddd;background:white;font-size:10px;font-weight:700;cursor:pointer}
+.lang-btn.active{background:black;color:white}
+.food-img{width:100%;height:90px;object-fit:cover;border-radius:8px;background:#f5f5f5}
+.voice-wrap{display:flex;gap:6px}
+.voice-btn{padding:12px 14px;border-radius:12px;background:#1a1a1a;border:1px solid #222;color:var(--green);cursor:pointer;font-weight:800}
+.voice-btn.listening{background:var(--green);color:black;animation:pulse 1s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(0,255,136,.7)}70%{box-shadow:0 0 0 10px rgba(0,255,136,0)}100%{box-shadow:0 0 0 0 rgba(0,255,136,0)}}
+.logo-preview{width:36px;height:36px;border-radius:8px;background:var(--green);display:flex;align-items:center;justify-content:center;font-weight:800;color:black;font-size:14px;overflow:hidden}
+#chatBtn{position:fixed;bottom:22px;right:22px;width:64px;height:64px;border-radius:100px;background:var(--green);color:black;border:none;cursor:pointer;z-index:999;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,255,136,0.4)}
+#chatBox{position:fixed;bottom:92px;right:22px;width:360px;max-width:92vw;background:#111;border:1px solid #222;border-radius:18px;overflow:hidden;display:none;flex-direction:column;z-index:999;height:480px}
+#chatHead{padding:14px 16px;background:#0a0a0a;border-bottom:1px solid #1a1a1a;display:flex;justify-content:space-between;font-weight:700;font-size:13px;align-items:center}
+#chatMsgs{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.msg{padding:10px 12px;border-radius:14px;max-width:80%;font-size:13px;line-height:1.4}
+.msg.bot{background:#1a1a1a;color:#ccc;border:1px solid #222;align-self:flex-start}
+.msg.user{background:var(--green);color:black;align-self:flex-end;font-weight:600}
+#chatInput{display:flex;gap:8px;padding:12px;border-top:1px solid #1a1a1a;background:#0a0a0a}
+#chatInput input{flex:1;background:#111;border:1px solid #222;border-radius:100px;padding:10px 14px;color:white;outline:none}
+#leadModal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px}
+#leadModal.box{background:#111;border:1px solid #222;border-radius:20px;padding:22px;width:100%;max-width:380px}
+@media(max-width:900px){.hero{grid-template-columns:1fr}.hero h1{font-size:34px}}
+</style>
+</head>
+<body>
+<script>
+const WHATSAPP="27835297315";
+function wa(m){window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(m)}`,'_blank')}
+let lastName=""; let cart={}; let currentLang="en"; let deliveryFee=20; let logoDataUrl="";
+
+const deliveryMap={"Motherwell":20,"KwaZakhele":20,"Kwazakhele":20,"New Brighton":20,"Zwide":20,"Uitenhage":30,"Kariega":30,"Despatch":30,"Central":30,"Summerstrand":50,"Walmer":40,"Humewood":40,"Korsten":20};
+function getDelivery(loc){ for(let k in deliveryMap){ if(loc.toLowerCase().includes(k.toLowerCase())) return deliveryMap[k]; } return 25; }
+function detectType(name){ name=name.toLowerCase(); if(name.includes("grill")||name.includes("kitchen")||name.includes("food")||name.includes("restaurant")||name.includes("chicken")||name.includes("burger")||name.includes("mama")||name.includes("thandi")) return "restaurant"; if(name.includes("barber")||name.includes("cut")||name.includes("salon")||name.includes("hair")||name.includes("beauty")||name.includes("legends")) return "barber"; if(name.includes("plumb")||name.includes("electric")||name.includes("build")) return "plumber"; if(name.includes("boutique")||name.includes("fashion")||name.includes("cloth")||name.includes("shop")) return "clothing"; if(name.includes("gym")||name.includes("fit")||name.includes("power")) return "gym"; return "restaurant"; }
+
+const texts={en:{order:"Order on WhatsApp",book:"Book on WhatsApp",call:"Call Now",shop:"Shop on WhatsApp",join:"Join on WhatsApp",cart:"Cart",total:"Total",delivery:"Delivery",clickEdit:"Click price to edit - Tap + to add",openNow:"OPEN NOW"},xh:{order:"Odola ku WhatsApp",book:"Bhukisha ku WhatsApp",call:"Tsala Ngoku",shop:"Thenga ku WhatsApp",join:"Joyina ku WhatsApp",cart:"Inqwelo",total:"Iyonke",delivery:"Ukuhanjiswa",clickEdit:"Cofa ixabiso uhlele - Cofa + ukongeza",openNow:"VULIWE NGOKU"},af:{order:"Bestel op WhatsApp",book:"Bespreek op WhatsApp",call:"Bel Nou",shop:"Koop op WhatsApp",join:"Sluit aan op WhatsApp",cart:"Mandjie",total:"Totaal",delivery:"Aflewering",clickEdit:"Klik prys om te wysig - Druk + vir mandjie",openNow:"NOU OOP"}};
+function t(k){ return texts[currentLang][k]||texts.en[k]; }
+
+const foodImages={
+  burger:"https://images.unsplash.com/photo-1568909344668-6f14a07b56a0?w=300&h=200&fit=crop",
+  grill:"https://images.unsplash.com/photo-1544025162-d76694265947?w=300&h=200&fit=crop",
+  chicken:"https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=300&h=200&fit=crop",
+  fries:"https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=300&h=200&fit=crop",
+  barber1:"https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=300&h=200&fit=crop",
+  barber2:"https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=300&h=200&fit=crop",
+  clothes1:"https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300&h=200&fit=crop",
+  clothes2:"https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=300&h=200&fit=crop",
+  gym1:"https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=300&h=200&fit=crop"
+};
+</script>
+
+<div class="nav">
+<div style="font-weight:700;display:flex;align-items:center;gap:8px"><div class="logo-preview" id="navLogo">M</div> Mecyle's MYLAB <b style="color:var(--green)">AI V15.1</b></div>
+<div style="display:flex;gap:8px"><a href="#gen" class="btn btn-o btn-sm">Generator</a><a onclick="wa('Hi Mecyle! V15.1 site!')" class="btn btn-g btn-sm">Get Site Now</a></div>
+</div>
+
+<div class="hero">
+<div>
+<div style="color:var(--green);font-size:11px;font-weight:800;letter-spacing:1px;margin-bottom:8px">V15.1</div>
+<h1>Real Images. <b>Voice Input.</b><br>Your Logo.</h1>
+<p style="color:#666;margin:12px 0 20px;line-height:1.5;max-width:480px">V15.0 update now active</p>
+<div style="display:flex;gap:8px"><a href="#gen" class="btn btn-g">Try V15.1 Generator</a><a onclick="toggleChat()" class="btn btn-o">Chat Robot</a></div>
+</div>
+
+<div class="generator" id="gen">
+<div style="font-weight:800;font-size:13px">Mecyle's MYLAB AI V15.1 GENERATOR</div>
+<p style="color:#666;font-size:11px;margin:4px 0 12px">Voice + Logo + Real Images - Still auto-detects type</p>
+
+<div class="voice-wrap">
+<input id="bizName" placeholder="Business Name - e.g. Thandis Kitchen Motherwell - OR tap mic" oninput="autoDetect()" style="flex:1">
+<button class="voice-btn" id="voiceBtn" onclick="startVoice()" title="Tap to speak business name">MIC</button>
+</div>
+<div style="font-size:10px;color:var(--green);margin:-8px 0 8px" id="detectLabel">AI will detect type automatically... Use MIC to speak!</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<select id="bizType">
+<option value="restaurant">Restaurant / Grill / Food</option>
+<option value="barber">Barber / Salon / Beauty</option>
+<option value="plumber">Plumber / Electrician / Builder</option>
+<option value="clothing">Clothing / Boutique / Shop</option>
+<option value="gym">Gym / Fitness / Trainer</option>
+</select>
+<input id="bizLoc" value="Motherwell, Port Elizabeth" placeholder="Location" oninput="updateDeliveryLabel()">
+</div>
+<div style="font-size:10px;color:#666;margin:-8px 0 8px" id="deliveryLabel">Delivery: R20 Motherwell, R30 Uitenhage, R50 Summerstrand</div>
+
+<div style="border:1px dashed #222;border-radius:12px;padding:10px;margin:8px 0;background:#0a0a0a">
+<div style="font-size:11px;font-weight:700;margin-bottom:6px">Upload Business Logo (shows in demo header)</div>
+<input type="file" id="logoUpload" accept="image/*" onchange="handleLogo(this)" style="font-size:11px;color:#666">
+<div style="font-size:9px;color:#555;margin-top:4px">Logo shows in navLogo + demo header. If no upload, shows first letter.</div>
+</div>
+
+<button class="btn btn-g" style="width:100%;margin-top:6px" onclick="generate()">Generate V15.1 REAL Demo</button>
+<button class="btn btn-o" style="width:100%;margin-top:8px;font-size:11px" onclick="generate(true)">Feeling Lucky - Random PE Demo</button>
+
+<div id="wrap" class="preview-wrap">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-size:11px;color:#666">LIVE PREVIEW - REAL IMAGES + CART + LANG</span><span style="font-size:10px;color:var(--green)">V15.1</span></div>
+<div id="preview" class="preview"></div>
+<div id="actions" class="action-row">
+<button class="btn btn-g" style="flex:1" onclick="openLeadModal()">Download + Lead Capture</button>
+<button class="btn btn-o" style="flex:1" onclick="checkoutWA()">Checkout Cart on WhatsApp</button>
+</div>
+<p style="font-size:10px;color:#555;margin-top:8px;text-align:center">Tip: Tap MIC to speak name, upload logo, click prices to edit, + to cart, XHOSA toggle</p>
+</div>
+</div>
+</div>
+
+<button id="chatBtn" onclick="toggleChat()"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="8.5" cy="16" r="1.5" fill="black"></circle><circle cx="15.5" cy="16" r="1.5" fill="black"></circle><path d="M9 8V7c0-1.1.9-2 2-2h2c1.1 0 2.9 2 2v1"></path><path d="M12 8V3"></path><circle cx="12" cy="3" r="1" fill="black"></circle></svg></button>
+
+<div id="chatBox">
+<div id="chatHead"><span style="display:flex;align-items:center;gap:8px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00FF88" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="8.5" cy="16" r="1.5" fill="#00FF88"></circle><circle cx="15.5" cy="16" r="1.5" fill="#00FF88"></circle></svg>MYLAB AI Robot V15.1</span><span onclick="toggleChat()" style="cursor:pointer;background:#222;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:100px">X</span></div>
+<div id="chatMsgs"><div class="msg bot">V15.1 is here! NEW:<br>- Real food/barber images (not grey boxes)<br>- MIC button - speak name, I type it!<br>- Upload logo - shows in demo<br>- Still has cart, Xhosa, delivery<br><br>Try MIC: tap MIC and say "Thandis Kitchen Motherwell"</div></div>
+<div id="chatInput"><input id="chatText" placeholder="Type business name..." onkeydown="if(event.key==='Enter')sendChat()"><button class="btn btn-g" style="padding:10px 14px" onclick="sendChat()">></button></div>
+</div>
+
+<div id="leadModal"><div class="box"><div style="font-weight:800">Get Lead Before Download</div><p style="font-size:11px;color:#666;margin:6px 0 12px">V15.1 captures lead + logo</p><input id="leadName" placeholder="Client Name" style="width:100%;padding:12px;border-radius:12px;background:#0a0a0a;border:1px solid #222;color:white;margin:6px 0"><input id="leadPhone" placeholder="WhatsApp Number" style="width:100%;padding:12px;border-radius:12px;background:#0a0a0a;border:1px solid #222;color:white;margin:6px 0"><div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-o" style="flex:1" onclick="closeLeadModal()">Cancel</button><button class="btn btn-g" style="flex:1" onclick="doDownload()">Save Lead + Download</button></div></div></div>
+
+<script>
+function handleLogo(input){
+  if(input.files && input.files[0]){
+    const reader=new FileReader();
+    reader.onload=function(e){
+      logoDataUrl=e.target.result;
+      document.getElementById('navLogo').innerHTML=`<img src="${logoDataUrl}" style="width:100%;height:100%;object-fit:cover">`;
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function startVoice(){
+  const btn=document.getElementById('voiceBtn');
+  if(!('webkitSpeechRecognition' in window) &&!('SpeechRecognition' in window)){ alert("Voice not supported on this browser - try Chrome on phone. Type name instead."); return; }
+  const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const rec=new SpeechRecognition();
+  rec.lang='en-ZA'; rec.interimResults=false;
+  btn.classList.add('listening'); btn.innerText="LISTENING...";
+  rec.onresult=function(e){
+    const text=e.results[0][0].transcript;
+    document.getElementById('bizName').value=text;
+    autoDetect();
+    btn.classList.remove('listening'); btn.innerText="MIC";
+  };
+  rec.onerror=function(){ btn.classList.remove('listening'); btn.innerText="MIC"; alert("Could not hear - try again or type"); };
+  rec.onend=function(){ btn.classList.remove('listening'); btn.innerText="MIC"; };
+  rec.start();
+}
+
+function autoDetect(){ let name=document.getElementById('bizName').value; if(!name) return; let type=detectType(name); document.getElementById('bizType').value=type; document.getElementById('detectLabel').innerText="AI detected: " + type + " - for " + name; }
+function updateDeliveryLabel(){ let loc=document.getElementById('bizLoc').value; let fee=getDelivery(loc); document.getElementById('deliveryLabel').innerText="Delivery: R" + fee + " for " + loc; }
+function changeLang(l){ currentLang=l; generate(false,true); }
+function addToCart(id,name,price){ let p=parseInt(price.replace(/[^0-9]/g,''))||0; if(!cart[id]) cart[id]={name:name,price:p,qty:0}; cart[id].qty++; renderCart(); updateQtyLabels(); }
+function subFromCart(id){ if(cart[id]){ cart[id].qty--; if(cart[id].qty<=0) delete cart[id]; } renderCart(); updateQtyLabels(); }
+function updateQtyLabels(){ for(let k in cart){ let el=document.getElementById('q_'+k); if(el) el.innerText=cart[k].qty; } for(let k in cart) continue; document.querySelectorAll('[id^="q_"]').forEach(el=>{ let id=el.id.replace('q_',''); if(!cart[id]) el.innerText=0; }); }
+function renderCart(){ let total=0,count=0; for(let k in cart){ total+=cart[k].price*cart[k].qty; count+=cart[k].qty; } let bar=document.getElementById('cartBar'); if(!bar) return; bar.innerHTML=`<div><b>${t('cart')}: ${count} items</b> | ${t('total')}: R${total} + ${t('delivery')} R${deliveryFee}</div><div><b>R${total+(count>0?deliveryFee:0)}</b></div>`; }
+function checkoutWA(){ let total=0,msg=`Hi! Order from ${lastName} V15.1 demo:\n`; for(let k in cart){ let item=cart[k]; total+=item.price*item.qty; msg+=`- ${item.qty}x ${item.name} @ R${item.price} = R${item.price*item.qty}\n`; } if(total==0){ alert("Cart empty - tap + first!"); return; } msg+=`\nSubtotal: R${total}\nDelivery (${document.getElementById('bizLoc').value}): R${deliveryFee}\nTOTAL: R${total+deliveryFee}\nBuilt by Mecyle's MYLAB AI V15.1 - ${document.getElementById('bizLoc').value}`; wa(msg); }
+
+const demos={
+restaurant: (name, loc) => {
+  let logoHtml=logoDataUrl?`<img src="${logoDataUrl}" style="width:36px;height:36px;border-radius:8px;object-fit:cover">`:`<div style="width:36px;height:36px;border-radius:8px;background:#FF3B30;color:white;display:flex;align-items:center;justify-content:center;font-weight:800">${name.charAt(0).toUpperCase()}</div>`;
+  let items=[["Double Cheese Smash","2x patty + cheese","89",foodImages.burger],["Mixed Grill Platter","Feeds 2 - wors, steak","199",foodImages.grill],["Full Chicken + Chips","1.2kg flame grilled","159",foodImages.chicken],["Loaded Fries","Cheese, bacon","45",foodImages.fries]];
+  let html=`<div style="font-family:sans-serif"><div class="lang-bar"><button class="lang-btn ${currentLang=='en'?'active':''}" onclick="changeLang('en')">ENGLISH</button><button class="lang-btn ${currentLang=='xh'?'active':''}" onclick="changeLang('xh')">XHOSA</button><button class="lang-btn ${currentLang=='af'?'active':''}" onclick="changeLang('af')">AFRIKAANS</button><span style="margin-left:auto;font-size:10px;color:#666">${t('delivery')}: R${deliveryFee} - ${loc}</span></div><div style="background:#0f0f0f;color:white;padding:18px;display:flex;justify-content:space-between;align-items:center"><div style="display:flex;align-items:center;gap:10px">${logoHtml}<b>${name.toUpperCase()}</b></div><span style="background:#FF3B30;padding:4px 10px;border-radius:100px;font-size:10px;font-weight:800">${t('openNow')} - ${loc}</span></div><div style="padding:16px;background:#fff"><div style="font-size:28px;font-weight:800;line-height:.9">PE'S FAVOURITE<br><span style="color:#FF3B30">GRILL & BURGERS</span></div><p style="color:#666;font-size:11px;margin:8px 0">${t('clickEdit')} - Real images!</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">`;
+  items.forEach((it,i)=>{
+    html+=`<div style="background:white;border:1px solid #eee;border-radius:12px;padding:8px"><img src="${it[3]}" class="food-img"><div style="margin-top:6px"><b style="font-size:12px">${it[0]}</b><br><span style="color:#888;font-size:10px">${it[1]}</span><div style="margin-top:6px;display:flex;justify-content:space-between;align-items:center"><span class="edit-price" contenteditable="true">R${it[2]}</span><div style="display:flex;gap:4px;align-items:center"><button class="qty-btn" onclick="subFromCart('r${i}')">-</button><span style="font-size:11px;min-width:12px;text-align:center" id="q_r${i}">${cart['r'+i]?cart['r'+i].qty:0}</span><button class="qty-btn" onclick="addToCart('r${i}','${it[0]}',document.querySelectorAll('.edit-price')[${i}]?.innerText||'R${it[2]}')">+</button></div></div></div></div>`;
+  });
+  html+=`</div></div><div id="cartBar" class="cart-bar"><div>${t('cart')}: 0 items | ${t('total')}: R0</div><div>R0</div></div><button style="width:100%;background:#FF3B30;color:white;border:none;padding:14px;font-weight:800" onclick="checkoutWA()">${t('order')} - R${deliveryFee} ${t('delivery')}</button></div></div>`; return html;
+},
+barber: (name, loc) => {
+  let logoHtml=logoDataUrl?`<img src="${logoDataUrl}" style="width:36px;height:36px;border-radius:8px;object-fit:cover">`:`<div style="width:36px;height:36px;border-radius:8px;background:#00FF88;color:black;display:flex;align-items:center;justify-content:center;font-weight:800">${name.charAt(0).toUpperCase()}</div>`;
+  return `<div style="font-family:sans-serif"><div class="lang-bar"><button class="lang-btn ${currentLang=='en'?'active':''}" onclick="changeLang('en')">ENGLISH</button><button class="lang-btn ${currentLang=='xh'?'active':''}" onclick="changeLang('xh')">XHOSA</button><button class="lang-btn ${currentLang=='af'?'active':''}" onclick="changeLang('af')">AFRIKAANS</button><span style="margin-left:auto;font-size:10px;color:#666">${loc}</span></div><div style="background:#080808;color:white;padding:18px;display:flex;justify-content:space-between;align-items:center"><div style="display:flex;align-items:center;gap:10px">${logoHtml}<b>${name.toUpperCase()}</b></div><span style="color:#00FF88;font-size:11px">${t('openNow')}</span></div><div style="padding:16px;background:#080808;color:white"><img src="${foodImages.barber1}" class="food-img" style="height:120px"><div style="font-size:30px;font-weight:800;line-height:.9;margin-top:10px">FRESH CUTS.<br><span style="color:#00FF88">NO WAITING.</span></div><div style="margin-top:16px;background:#111;border:1px solid #1e1e1e;border-radius:12px;padding:14px"><div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1a1a"><span>Regular Cut</span><div style="display:flex;gap:8px;align-items:center"><span class="edit-price" style="border-color:#00FF88;background:#0a1a0f;color:#00FF88" contenteditable="true">R80</span><button class="qty-btn" style="background:#00FF88;border-color:#00FF88;color:black" onclick="addToCart('b0','Regular Cut','R80')">+ Book</button></div></div><div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1a1a"><span>Cut + Beard</span><div style="display:flex;gap:8px;align-items:center"><span class="edit-price" style="border-color:#00FF88;background:#0a1a0f;color:#00FF88" contenteditable="true">R120</span><button class="qty-btn" style="background:#00FF88;border-color:#00FF88;color:black" onclick="addToCart('b1','Cut + Beard','R120')">+ Book</button></div></div></div></div><div id="cartBar" class="cart-bar"><div>${t('cart')}: ${Object.keys(cart).length} services</div><div>Book Now</div></div><button style="width:100%;background:#00FF88;color:black;border:none;padding:14px;font-weight:800" onclick="checkoutWA()">${t('book')}</button></div>`;
+},
+plumber: (name, loc) => {
+  let logoHtml=logoDataUrl?`<img src="${logoDataUrl}" style="width:36px;height:36px;border-radius:8px;object-fit:cover">`:`<div style="width:36px;height:36px;border-radius:8px;background:#0a3cff;color:white;display:flex;align-items:center;justify-content:center;font-weight:800">${name.charAt(0).toUpperCase()}</div>`;
+  return `<div style="font-family:sans-serif;background:white;color:#111"><div class="lang-bar"><button class="lang-btn ${currentLang=='en'?'active':''}" onclick="changeLang('en')">EN</button><button class="lang-btn ${currentLang=='xh'?'active':''}" onclick="changeLang('xh')">XH</button><button class="lang-btn ${currentLang=='af'?'active':''}" onclick="changeLang('af')">AF</button><span style="margin-left:auto;font-size:10px;color:#666">Call-Out: R${deliveryFee}</span></div><div style="background:#0a3cff;color:white;padding:18px;display:flex;justify-content:space-between;align-items:center"><div style="display:flex;align-items:center;gap:10px">${logoHtml}<b>${name.toUpperCase()}</b></div><span style="background:white;color:#0a3cff;padding:4px 8px;border-radius:100px;font-size:10px;font-weight:800">24/7 - ${loc}</span></div><div style="padding:22px"><div style="font-size:30px;font-weight:800;line-height:.9">${loc}'s<br><span style="color:#0a3cff">TRUSTED PLUMBERS</span></div><div style="background:#f3f7ff;border:1px solid #dbe6ff;border-radius:12px;padding:14px;margin-top:12px"><div style="display:flex;justify-content:space-between;margin:8px 0"><span>Call-Out Fee - ${loc}</span><span class="edit-price" style="border-color:#0a3cff;color:#0a3cff" contenteditable="true">R${deliveryFee}</span></div><div style="display:flex;justify-content:space-between;margin:8px 0"><span>Unblock Drain</span><span class="edit-price" style="border-color:#0a3cff;color:#0a3cff" contenteditable="true">R350</span></div></div><button style="width:100%;margin-top:12px;background:#0a3cff;color:white;border:none;padding:12px;border-radius:100px;font-weight:800" onclick="wa('Hi ${name}! Need plumber in ${loc}?')">${t('call')} - 083 529 7315</button></div></div>`;
+},
+clothing: (name, loc) => {
+  let logoHtml=logoDataUrl?`<img src="${logoDataUrl}" style="width:36px;height:36px;border-radius:8px;object-fit:cover">`:`<div style="width:36px;height:36px;border-radius:8px;background:black;color:white;display:flex;align-items:center;justify-content:center;font-weight:800">${name.charAt(0).toUpperCase()}</div>`;
+  return `<div style="font-family:sans-serif;background:#fff;color:#111"><div class="lang-bar"><button class="lang-btn ${currentLang=='en'?'active':''}" onclick="changeLang('en')">EN</button><button class="lang-btn ${currentLang=='xh'?'active':''}" onclick="changeLang('xh')">XH</button><button class="lang-btn ${currentLang=='af'?'active':''}" onclick="changeLang('af')">AF</button></div><div style="padding:18px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center"><div style="display:flex;align-items:center;gap:10px">${logoHtml}<b>${name.toUpperCase()}</b></div><span style="font-size:11px;background:black;color:white;padding:4px 8px;border-radius:100px">${loc}</span></div><div style="padding:16px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div style="border:1px solid #eee;border-radius:12px;padding:8px"><img src="${foodImages.clothes1}" class="food-img"><div style="font-size:12px;font-weight:700;margin-top:6px">Oversized Tee</div><div style="display:flex;justify-content:space-between;margin-top:4px"><span class="edit-price" style="border-color:#ec4899;color:#ec4899" contenteditable="true">R250</span><button class="qty-btn" onclick="addToCart('c0','Oversized Tee','R250')">+</button></div></div><div style="border:1px solid #eee;border-radius:12px;padding:8px"><img src="${foodImages.clothes2}" class="food-img"><div style="font-size:12px;font-weight:700;margin-top:6px">Cargo Pants</div><div style="display:flex;justify-content:space-between;margin-top:4px"><span class="edit-price" style="border-color:#ec4899;color:#ec4899" contenteditable="true">R450</span><button class="qty-btn" onclick="addToCart('c1','Cargo Pants','R450')">+</button></div></div></div></div><div id="cartBar" class="cart-bar"><div>${t('cart')}: ${Object.keys(cart).length} items</div><div>R${Object.values(cart).reduce((s,i)=>s+i.price*i.qty,0)}</div></div><button style="width:100%;background:black;color:white;border:none;padding:14px;font-weight:800" onclick="checkoutWA()">${t('shop')} - ${t('delivery')} R${deliveryFee}</button></div>`;
+},
+gym: (name, loc) => {
+  let logoHtml=logoDataUrl?`<img src="${logoDataUrl}" style="width:36px;height:36px;border-radius:8px;object-fit:cover">`:`<div style="width:36px;height:36px;border-radius:8px;background:#f59e0b;color:black;display:flex;align-items:center;justify-content:center;font-weight:800">${name.charAt(0).toUpperCase()}</div>`;
+  return `<div style="font-family:sans-serif;background:#0a0a0a;color:white"><div class="lang-bar" style="background:#111;border-color:#222"><button class="lang-btn ${currentLang=='en'?'active':''}" onclick="changeLang('en')">EN</button><button class="lang-btn ${currentLang=='xh'?'active':''}" onclick="changeLang('xh')">XH</button><button class="lang-btn ${currentLang=='af'?'active':''}" onclick="changeLang('af')">AF</button><span style="margin-left:auto;font-size:10px;color:#666">${loc}</span></div><div style="padding:18px;display:flex;justify-content:space-between;align-items:center"><div style="display:flex;align-items:center;gap:10px">${logoHtml}<b>${name.toUpperCase()}</b></div><span style="color:#f59e0b;font-size:11px">05:00-21:00</span></div><div style="padding:16px"><img src="${foodImages.gym1}" class="food-img" style="height:140px"><div style="font-size:32px;font-weight:800;line-height:.9;margin-top:10px">TRANSFORM<br><span style="color:#f59e0b">AT ${name.toUpperCase()}</span></div></div><div id="cartBar" class="cart-bar" style="border-color:#f59e0b"><div>${t('cart')}: ${Object.keys(cart).length} plans</div><div>R${Object.values(cart).reduce((s,i)=>s+i.price*i.qty,0)}</div></div><button style="width:100%;background:#f59e0b;color:black;border:none;padding:14px;font-weight:800" onclick="checkoutWA()">${t('join')}</button></div>`;
+}
+};
+
+function generate(random=false, keepCart=false){
+let name=document.getElementById('bizName').value.trim();
+let type=document.getElementById('bizType').value;
+let loc=document.getElementById('bizLoc').value || "Port Elizabeth";
+if(random){const samples=[["Thandis Kitchen Motherwell","restaurant"],["Legends Barber New Brighton","barber"],["PE Quick Plumbers Uitenhage","plumber"],["Fresh Boutique Walmer","clothing"],["Power House Gym Summerstrand","gym"]];const s=samples[Math.floor(Math.random()*samples.length)];name=s[0];type=s[1];document.getElementById('bizName').value=name;document.getElementById('bizType').value=type;loc=s[0].split(" ").slice(-1)[0]+", Port Elizabeth";document.getElementById('bizLoc').value=loc;}
+if(!keepCart){ cart={}; }
+if(!name &&!keepCart){alert("Type business name or tap MIC!");return}
+if(!keepCart){ autoDetect(); type=document.getElementById('bizType').value; deliveryFee=getDelivery(loc); }
+lastName=name||lastName;
+const builder=demos[type]||demos.restaurant;
+const html=builder(lastName, loc);
+document.getElementById('wrap').style.display='block';
+document.getElementById('preview').innerHTML=html;
+renderCart();
+if(!keepCart) document.getElementById('wrap').scrollIntoView({behavior:'smooth'});
+}
+function openLeadModal(){ if(!lastName){alert("Generate first");return} document.getElementById('leadModal').style.display='flex'; }
+function closeLeadModal(){ document.getElementById('leadModal').style.display='none'; }
+function doDownload(){
+  let lname=document.getElementById('leadName').value||"Client"; let lphone=document.getElementById('leadPhone').value||"NoPhone";
+  const preview=document.getElementById('preview'); const content=preview.innerHTML;
+  const fullHTML=`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${lastName} - Demo</title><style>body{margin:0;font-family:sans-serif;background:#f5f5f5}.top{background:black;color:white;text-align:center;padding:6px;font-size:11px}.edit-price{border:none!important;background:transparent!important;font-weight:800}.food-img{width:100%;height:90px;object-fit:cover;border-radius:8px}</style></head><body><div class="top">Demo by Mecyle's MYLAB AI V15.1 - Client: ${lname} ${lphone} - ${lastName} - 083 529 7315</div>${content}<div style="padding:20px;text-align:center;color:#999;font-size:11px;background:white;border-top:1px solid #eee">Built by Mecyle's MYLAB AI V15.1 - Lead: ${lname} - ${lphone}</div></body></html>`;
+  const blob=new Blob([fullHTML],{type:"text/html"}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`${lastName.replace(/[^a-z0-9]/gi,'_')}_LEAD_${lphone.replace(/\s/g,'')}_V15.1.html`; a.click(); URL.revokeObjectURL(url);
+  wa(`New V15.1 Lead! Business: ${lastName} in ${document.getElementById('bizLoc').value}. Client: ${lname} - ${lphone}. Logo: ${logoDataUrl?'Yes':'No'}. Cart: ${JSON.stringify(cart)}`);
+}
+function toggleChat(){const b=document.getElementById('chatBox');b.style.display=b.style.display==='flex'?'none':'flex';}
+function sendChat(){const input=document.getElementById('chatText');const t=input.value.trim();if(!t)return;const msgs=document.getElementById('chatMsgs');msgs.innerHTML+=`<div class="msg user">${t}</div>`;input.value='';setTimeout(()=>{document.getElementById('bizName').value=t;autoDetect();generate();msgs.innerHTML+=`<div class="msg bot">Building V15.1 demo for "${t}"</div>`;msgs.scrollTop=msgs.scrollHeight;},500);msgs.scrollTop=msgs.scrollHeight;}
+</script>
+
+<div style="padding:20px 5%;border-top:1px solid #1a1a1a;color:#444;font-size:11px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><div>Mecyle's MYLAB AI V15.1  - 083 529 7315</div><div>Built in PE by Mecyle De Souza</div></div>
+</body>
+</html>
